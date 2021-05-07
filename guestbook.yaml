@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guestbook-deployment
+  labels:
+    app: guestbook
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: guestbook
+  template:
+    metadata:
+      labels:
+        app: guestbook
+    spec:
+      containers:
+      - name: guestbook
+        image: fryckbos/guestbook:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEW_RELIC_LICENSE_KEY
+          value: "<REDACTED>"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guestbook
+  labels:
+    app: guestbook
+spec:
+  ports:
+  - port: 3000
+    protocol: TCP
+  selector:
+    app: guestbook
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guestbook-load
+  labels:
+    app: guestbook-load
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: guestbook-load
+  template:
+    metadata:
+      labels:
+        app: guestbook-load
+    spec:
+      containers:
+      - name: load
+        image: radial/busyboxplus:curl
+        command: ["/bin/sh"]
+        args: ["-c", "while [ 1 ]; do curl http://guestbook:3000/; curl http://guestbook:3000/message; sleep 1; echo .; done"]
